@@ -1,18 +1,117 @@
-rules_version='2'
+"use client"
 
-service cloud.firestore {
-  match /databases/{database}/documents {
-    match /{document=**} {
-      // This rule allows anyone with your database reference to view, edit,
-      // and delete all data in your database. It is useful for getting
-      // started, but it is configured to expire after 30 days because it
-      // leaves your app open to attackers. At that time, all client
-      // requests to your database will be denied.
-      //
-      // Make sure to write security rules for your app before that time, or
-      // else all client requests to your database will be denied until you
-      // update your rules.
-      allow read, write: if request.time < timestamp.date(2025, 9, 9);
-    }
-  }
+import * as React from "react"
+import { ChevronsUpDownIcon, CheckIcon } from "lucide-react"
+
+import { cn } from "@/lib/utils"
+import { Button, buttonVariants } from "@/components/ui/button"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command"
+
+export type ComboboxOption = {
+  value: string
+  label: string
+  icon?: React.ComponentType<React.SVGProps<SVGSVGElement>>
+}
+
+export type ComboboxProps = {
+  options: ComboboxOption[]
+  value?: string | null
+  onChange?: (value: string) => void
+  placeholder?: string
+  searchPlaceholder?: string
+  emptyMessage?: string
+  disabled?: boolean
+  className?: string
+  buttonClassName?: string
+}
+
+/**
+ * A single-select Combobox built with Command, Popover and Button.
+ * Controlled by value/onChange. Renders a searchable list of options.
+ */
+export function Combobox({
+  options,
+  value = null,
+  onChange,
+  placeholder = "Select option...",
+  searchPlaceholder = "Search...",
+  emptyMessage = "No results found.",
+  disabled,
+  className,
+  buttonClassName,
+}: ComboboxProps) {
+  const [open, setOpen] = React.useState(false)
+
+  const selected = React.useMemo(
+    () => (value ? options.find((o) => o.value === value) ?? null : null),
+    [options, value]
+  )
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          type="button"
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          aria-label="Toggle combobox"
+          disabled={disabled}
+          className={cn(
+            buttonVariants({ variant: "outline" }),
+            "w-full justify-between",
+            buttonClassName
+          )}
+        >
+          <span className={cn("truncate", !selected && "text-muted-foreground")}> 
+            {selected ? selected.label : placeholder}
+          </span>
+          <ChevronsUpDownIcon className="ml-2 size-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className={cn("w-[--radix-popover-trigger-width] p-0", className)} align="start">
+        <Command>
+          <CommandInput placeholder={searchPlaceholder} />
+          <CommandList>
+            <CommandEmpty>{emptyMessage}</CommandEmpty>
+            <CommandGroup>
+              {options.map((opt) => {
+                const Icon = opt.icon
+                const isSelected = opt.value === value
+
+                return (
+                  <CommandItem
+                    key={opt.value}
+                    value={opt.value}
+                    onSelect={(val) => {
+                      onChange?.(val)
+                      setOpen(false)
+                    }}
+                    className="gap-2"
+                  >
+                    {Icon ? <Icon className="size-4" /> : null}
+                    <span className="truncate">{opt.label}</span>
+                    <CheckIcon
+                      className={cn(
+                        "ml-auto size-4",
+                        isSelected ? "opacity-100" : "opacity-0"
+                      )}
+                    />
+                  </CommandItem>
+                )
+              })}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  )
 }

@@ -1,12 +1,85 @@
-rules_version = '2';
+"use client"
 
-// Craft rules based on data in your Firestore database
-// allow write: if firestore.get(
-//    /databases/(default)/documents/users/$(request.auth.uid)).data.isAdmin;
-service firebase.storage {
-  match /b/{bucket}/o {
-    match /{allPaths=**} {
-      allow read, write: if false;
-    }
+import { useState, useMemo } from "react"
+import { Combobox, type ComboboxOption } from "@/components/ui/combobox"
+import { Button } from "@/components/ui/button"
+import { provinces } from "@/lib/locations/provinces"
+import { getCitiesByProvinceId } from "@/lib/locations/actions"
+
+export type LocationValue = {
+  provinceId: number
+  provinceName: string
+  cityId: number
+  cityName: string
+}
+
+export function LocationPicker() {
+  const provinceOptions: ComboboxOption[] = useMemo(
+    () => provinces.map((p) => ({ value: String(p.id), label: p.name })),
+    []
+  )
+
+  const [provinceId, setProvinceId] = useState<string | null>(null)
+  const [cityId, setCityId] = useState<string | null>(null)
+  const [cityOptions, setCityOptions] = useState<ComboboxOption[]>([])
+
+  const handleProvinceChange = (val: string) => {
+    setProvinceId(val)
+    setCityId(null)
+    const pid = Number(val)
+    const cities = getCitiesByProvinceId(pid)
+    setCityOptions(cities.map((c) => ({ value: String(c.id), label: c.name })))
   }
+
+  const handleCityChange = (val: string) => {
+    setCityId(val)
+  }
+
+  const handleSave = () => {
+    if (!provinceId || !cityId) return
+    const pid = Number(provinceId)
+    const cid = Number(cityId)
+    const provinceName = provinces.find((p) => p.id === pid)?.name ?? ""
+    const cityName = cityOptions.find((c) => c.value === cityId)?.label ?? ""
+    const payload: LocationValue = {
+      provinceId: pid,
+      provinceName,
+      cityId: cid,
+      cityName,
+    }
+    try {
+      localStorage.setItem("selectedLocation", JSON.stringify(payload))
+    } catch (_) {}
+  }
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <Combobox
+          options={provinceOptions}
+          value={provinceId}
+          onChange={handleProvinceChange}
+          placeholder="Select province..."
+          searchPlaceholder="Search province..."
+          emptyMessage="No provinces found."
+        />
+
+        <Combobox
+          options={cityOptions}
+          value={cityId}
+          onChange={handleCityChange}
+          placeholder="Select city..."
+          searchPlaceholder="Search city..."
+          emptyMessage="No cities found."
+          disabled={!provinceId || cityOptions.length === 0}
+        />
+      </div>
+
+      <div className="flex justify-end">
+        <Button type="button" onClick={handleSave} disabled={!provinceId || !cityId}>
+          Save
+        </Button>
+      </div>
+    </div>
+  )
 }

@@ -1,21 +1,19 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Ubuntu_Sans } from "next/font/google";
 import "./globals.css";
+import { ThemeProvider } from "@/providers/theme-provider";
+import { Toaster } from "@/components/ui/sonner";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const ubuntuSans = Ubuntu_Sans({
+  variable: "--font-ubuntu-sans",
   subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+  weight: ["400", "700"],
 });
 
 export const metadata: Metadata = {
-  title: "Quiero Un Servicio",
+  title: "QuieroUnServicio - Marketplace de Servicios",
   description:
-    "Quiero Un Servicio es una plataforma que conecta a personas que necesitan ayuda con personas que pueden ayudar.",
+    "QuieroUnServicio es un marketplace donde profesionales publican servicios y usuarios buscan, contactan y contratan servicios en Argentina",
 };
 
 export default function RootLayout({
@@ -24,11 +22,22 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        {children}
+    <html
+      lang="es"
+      suppressHydrationWarning
+      className="scroll-smooth"
+      data-scroll-behavior="smooth"
+    >
+      <body className={`${ubuntuSans.variable} antialiased`}>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          {children}
+          <Toaster position="top-center" />
+        </ThemeProvider>
       </body>
     </html>
   );
